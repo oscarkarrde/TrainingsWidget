@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trainings and Certifications Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#222;padding:20px;min-height:100vh}
+.container{max-width:860px;margin:0 auto;background:#fff;border-radius:10px;padding:24px;border:1px solid #ddd}
+.header{padding:0 0 1rem;border-bottom:1px solid #e0e0e0;margin-bottom:1rem}
+.header h1{font-size:22px;font-weight:500;color:#1a3a5c;margin-bottom:4px}
+.header p{font-size:13px;color:#666}
+.tab-bar{display:flex;margin-bottom:1rem;border:1px solid #ccc;border-radius:6px;overflow:hidden}
+.tab-btn{flex:1;padding:9px 12px;font-size:13px;font-weight:500;background:#f0f0f0;color:#666;border:none;cursor:pointer;border-right:1px solid #ccc;transition:background 0.15s}
+.tab-btn:last-child{border-right:none}
+.tab-btn.active{background:#fff;color:#1a3a5c}
+.section{display:none}
+.section.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:#f7f7f7;border-radius:6px;padding:10px 14px;border:1px solid #eee}
+.stat-label{font-size:12px;color:#888;margin-bottom:2px}
+.stat-val{font-size:22px;font-weight:500;color:#222}
+.stat-val.green{color:#1a7a4a}
+.controls{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.controls input[type=text],.controls select{font-size:13px;padding:6px 10px;border:1px solid #ccc;border-radius:5px;background:#fff;color:#222}
+.controls input[type=text]{flex:1;min-width:140px}
+.controls select{min-width:130px}
+.course-list{border:1px solid #ddd;border-radius:8px;overflow:hidden;max-height:360px;overflow-y:auto}
+.course-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.1s}
+.course-row:last-child{border-bottom:none}
+.course-row:hover{background:#f5f5f5}
+.course-row.checked{background:#e8f5ee}
+.course-row input[type=checkbox]{width:15px;height:15px;cursor:pointer;flex-shrink:0;accent-color:#1a7a4a}
+.col-code{font-size:12px;font-weight:500;color:#666;width:80px;flex-shrink:0;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-inst{font-size:12px;font-weight:500;color:#666;width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-id{font-size:12px;color:#888;font-family:monospace;width:76px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-title{font-size:13px;color:#222;flex:1;line-height:1.4}
+.cat-pill{font-size:11px;padding:2px 7px;border-radius:100px;background:#eee;color:#666;flex-shrink:0;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del-btn{font-size:11px;padding:3px 7px;border:1px solid #ddd;border-radius:4px;color:#c0392b;background:transparent;cursor:pointer;flex-shrink:0;opacity:0.6}
+.del-btn:hover{opacity:1;background:#fdecea}
+.cat-label{font-size:11px;font-weight:600;color:#666;padding:5px 12px;background:#f0f0f0;border-bottom:1px solid #e0e0e0;text-transform:uppercase;letter-spacing:0.05em}
+.empty{padding:2rem;text-align:center;color:#999;font-size:14px}
+.add-panel{background:#f7f7f7;border-radius:8px;padding:14px 16px;margin-bottom:1rem;border:1px solid #eee}
+.add-panel h3{font-size:13px;font-weight:600;color:#333;margin-bottom:10px}
+.add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:#666}
+.field input,.field select{font-size:13px;padding:6px 10px;border:1px solid #ccc;border-radius:5px;background:#fff;color:#222}
+.field.f-inst{width:140px}
+.field.f-id{width:90px}
+.field.f-name{flex:1;min-width:180px}
+.field.f-cat{width:145px}
+.add-row button{font-size:13px;padding:7px 14px;white-space:nowrap;align-self:flex-end;border:1px solid #ccc;border-radius:5px;background:#fff;cursor:pointer}
+.add-row button:hover{background:#f0f0f0}
+.bulk-area{margin-top:10px;border-top:1px solid #e0e0e0;padding-top:10px}
+.bulk-area label{font-size:12px;color:#666;display:block;margin-bottom:4px}
+.bulk-row{display:flex;gap:8px;align-items:flex-start}
+.bulk-row textarea{flex:1;font-size:12px;font-family:monospace;resize:vertical;min-height:50px;padding:6px 8px;border:1px solid #ccc;border-radius:5px;background:#fff;color:#222}
+.bulk-row button{font-size:13px;padding:7px 14px;white-space:nowrap;border:1px solid #ccc;border-radius:5px;background:#fff;cursor:pointer}
+.bulk-row button:hover{background:#f0f0f0}
+.actions{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap}
+.actions button{font-size:13px;padding:7px 14px;border:1px solid #ccc;border-radius:5px;background:#fff;cursor:pointer}
+.actions button:hover{background:#f0f0f0}
+.err{font-size:12px;color:#c0392b;margin-top:5px;min-height:15px}
+.divider{border:none;border-top:1px solid #e0e0e0;margin:1rem 0}
+
+/* ── Save-to-form bar ── */
+.save-bar{
+  display:flex;align-items:center;gap:12px;
+  background:#eaf4f0;border:1px solid #b2dac8;
+  border-radius:8px;padding:12px 16px;margin-top:1rem;
+  flex-wrap:wrap;
+}
+.save-bar .save-summary{flex:1;font-size:13px;color:#1a3a5c;min-width:160px}
+.save-bar .save-summary strong{font-size:15px}
+.btn-save{
+  font-size:13px;font-weight:600;
+  padding:9px 20px;
+  background:#1a7a4a;color:#fff;
+  border:none;border-radius:6px;
+  cursor:pointer;white-space:nowrap;
+  transition:background 0.15s;
+}
+.btn-save:hover{background:#145f39}
+.btn-save:disabled{background:#8abfa8;cursor:not-allowed}
+.save-status{
+  font-size:12px;padding:6px 12px;border-radius:5px;
+  display:none;white-space:nowrap;
+}
+.save-status.success{display:inline-block;background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.save-status.error{display:inline-block;background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.save-status.info{display:inline-block;background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb}
+
+/* ── Field-name config panel ── */
+.config-panel{
+  background:#fffbea;border:1px solid #f0d060;
+  border-radius:8px;padding:12px 16px;margin-bottom:1rem;
+  font-size:12px;color:#555;
+}
+.config-panel summary{font-weight:600;color:#333;cursor:pointer;font-size:13px;margin-bottom:0}
+.config-panel[open] summary{margin-bottom:8px}
+.config-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.config-grid .field{min-width:200px;flex:1}
+.config-note{margin-top:8px;font-size:11px;color:#888;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>Trainings and certifications</h1>
+  <p>Select from the FEMA IS catalog or add your own courses and certifications, then save directly to the resume form.</p>
+</div>
+
+<!-- ── Zoho Field Name Config ── -->
+<details class="config-panel" id="config-panel">
+  <summary>⚙️ Zoho Creator field configuration (expand to set up)</summary>
+  <p style="margin-top:6px;color:#666">Enter the <strong>API field names</strong> from your Zoho Creator Resume form exactly as they appear in the field settings. These tell the widget where to save your selections.</p>
+  <div class="config-grid">
+    <div class="field">
+      <label>FEMA Courses field API name</label>
+      <input type="text" id="cfg-fema-field" value="Additional_Certifications_and_Licenses" placeholder="e.g. Additional_Certifications_and_Licenses">
+    </div>
+    <div class="field">
+      <label>Custom Entries field API name</label>
+      <input type="text" id="cfg-custom-field" value="Additional_Certifications_and_Licenses" placeholder="e.g. Additional_Certifications_and_Licenses">
+    </div>
+  </div>
+  <p class="config-note">
+    💡 To find a field's API name in Zoho Creator: open the form builder → click the field → look for <strong>"Field Link Name"</strong> or <strong>"API Name"</strong> in the right panel.<br>
+    If you want both FEMA and custom entries saved to the same field, enter the same API name in both boxes above (recommended).
+  </p>
+</details>
+
+<div class="stats">
+  <div class="stat"><div class="stat-label">FEMA IS selected</div><div class="stat-val green" id="fema-sel-count">0</div></div>
+  <div class="stat"><div class="stat-label">Custom entries</div><div class="stat-val green" id="custom-total-count">0</div></div>
+  <div class="stat"><div class="stat-label">Custom selected</div><div class="stat-val green" id="custom-sel-count">0</div></div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('fema')">&#127970; FEMA IS catalog</button>
+  <button class="tab-btn" onclick="switchTab('custom')">&#9998; Custom entries</button>
+</div>
+
+<!-- FEMA TAB -->
+<div id="tab-fema" class="section active">
+  <div class="controls">
+    <input type="text" id="f-search" placeholder="Search by code or title&hellip;" oninput="renderFema()">
+    <select id="f-cat" onchange="renderFema()">
+      <option value="">All categories</option>
+      <option value="Animals/Livestock">Animals &amp; livestock</option>
+      <option value="Continuity">Continuity &amp; planning</option>
+      <option value="Emergency Mgmt">Emergency management</option>
+      <option value="Hazard Mitigation">Hazard mitigation</option>
+      <option value="ICS/NIMS">ICS / NIMS</option>
+      <option value="Other">Other</option>
+      <option value="Public Assistance">Public assistance</option>
+      <option value="Public Works">Public works</option>
+      <option value="Response/Recovery">Response / recovery</option>
+      <option value="Security">Security</option>
+    </select>
+    <select id="f-show" onchange="renderFema()">
+      <option value="all">Show all</option>
+      <option value="selected">Selected only</option>
+      <option value="unselected">Not selected</option>
+    </select>
+  </div>
+  <div class="course-list" id="fema-list"></div>
+  <div class="actions">
+    <button onclick="femaSelectAll()">&#10003; Select all visible</button>
+    <button onclick="femaClearAll()">&#10007; Clear all visible</button>
+  </div>
+</div>
+
+<!-- CUSTOM TAB -->
+<div id="tab-custom" class="section">
+  <div class="add-panel">
+    <h3>+ Add an entry</h3>
+    <div class="add-row">
+      <div class="field f-inst"><label>Institution</label><input type="text" id="c-inst" placeholder="FEMA EMI"></div>
+      <div class="field f-id"><label>Course ID</label><input type="text" id="c-id" placeholder="IS-700.b"></div>
+      <div class="field f-name"><label>Course / certification name</label><input type="text" id="c-name" placeholder="Introduction to NIMS"></div>
+      <div class="field f-cat"><label>Category</label>
+        <select id="c-cat">
+          <option value="Animals/Livestock">Animals &amp; livestock</option>
+          <option value="Continuity">Continuity &amp; planning</option>
+          <option value="Emergency Mgmt">Emergency management</option>
+          <option value="Hazard Mitigation">Hazard mitigation</option>
+          <option value="ICS/NIMS">ICS / NIMS</option>
+          <option value="Other">Other</option>
+          <option value="Public Assistance">Public assistance</option>
+          <option value="Public Works">Public works</option>
+          <option value="Response/Recovery">Response / recovery</option>
+          <option value="Security">Security</option>
+        </select>
+      </div>
+      <button onclick="addCustom()">+ Add</button>
+    </div>
+    <div class="err" id="c-err"></div>
+    <div class="bulk-area">
+      <label>Bulk import &mdash; one per line: <strong>institution | course ID | course name | category</strong> (course ID optional)</label>
+      <div class="bulk-row">
+        <textarea id="c-bulk" placeholder="FEMA EMI | IS-100.c | Introduction to the ICS | ICS/NIMS&#10;Red Cross | | Disaster relief fundamentals | Response/Recovery"></textarea>
+        <button onclick="bulkImport()">Import</button>
+      </div>
+      <div class="err" id="c-bulk-err"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <input type="text" id="c-search" placeholder="Search by institution, ID, or name&hellip;" oninput="renderCustom()">
+    <select id="c-cat-filter" onchange="renderCustom()">
+      <option value="">All categories</option>
+      <option value="Animals/Livestock">Animals &amp; livestock</option>
+      <option value="Continuity">Continuity &amp; planning</option>
+      <option value="Emergency Mgmt">Emergency management</option>
+      <option value="Hazard Mitigation">Hazard mitigation</option>
+      <option value="ICS/NIMS">ICS / NIMS</option>
+      <option value="Other">Other</option>
+      <option value="Public Assistance">Public assistance</option>
+      <option value="Public Works">Public works</option>
+      <option value="Response/Recovery">Response / recovery</option>
+      <option value="Security">Security</option>
+    </select>
+    <select id="c-show" onchange="renderCustom()">
+      <option value="all">Show all</option>
+      <option value="selected">Selected only</option>
+      <option value="unselected">Not selected</option>
+    </select>
+  </div>
+  <div class="course-list" id="custom-list"></div>
+  <div class="actions">
+    <button onclick="customSelectAll()">&#10003; Select all visible</button>
+    <button onclick="customClearAll()">&#10007; Clear all visible</button>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ── Save-to-Form Bar (replaces old export) ── -->
+<div class="save-bar">
+  <div class="save-summary" id="save-summary">
+    <strong>0</strong> items selected — make selections above, then save to the form.
+  </div>
+  <span class="save-status" id="save-status"></span>
+  <button class="btn-save" id="btn-save" onclick="saveToForm()">💾 Save to Resume Form</button>
+</div>
+
+</div><!-- end .container -->
+
+<script>
+/* ─────────────────────────────────────────
+   FEMA COURSE DATA
+───────────────────────────────────────── */
+const FEMA_COURSES=[
+  {code:"IS-5.a",title:"An introduction to hazardous materials",cat:"Hazard Mitigation"},
+  {code:"IS-10.a",title:"Animals in disasters: awareness and preparedness",cat:"Animals/Livestock"},
+  {code:"IS-11.a",title:"Animals in disasters: community planning",cat:"Animals/Livestock"},
+  {code:"IS-15.b",title:"Special events contingency planning for public safety agencies",cat:"Emergency Mgmt"},
+  {code:"IS-26",title:"Guide to points of distribution",cat:"Response/Recovery"},
+  {code:"IS-27",title:"Orientation to FEMA logistics",cat:"Response/Recovery"},
+  {code:"IS-29.a",title:"Public information officer awareness",cat:"Emergency Mgmt"},
+  {code:"IS-30.b",title:"Mitigation eGrants system for the subgrant applicant",cat:"Hazard Mitigation"},
+  {code:"IS-31.b",title:"Mitigation eGrants for the grant applicant",cat:"Hazard Mitigation"},
+  {code:"IS-36.a",title:"Preparedness for child care providers",cat:"Emergency Mgmt"},
+  {code:"IS-42.a",title:"Social media in emergency management",cat:"Emergency Mgmt"},
+  {code:"IS-45",title:"Continuous improvement overview",cat:"Emergency Mgmt"},
+  {code:"IS-66",title:"Preparing the nation for space weather events",cat:"Emergency Mgmt"},
+  {code:"IS-75",title:"Military resources in emergency management",cat:"Emergency Mgmt"},
+  {code:"IS-100.c",title:"Introduction to the incident command system, ICS 100",cat:"ICS/NIMS"},
+  {code:"IS-102.c",title:"Preparing for federal disaster operations: FEMA response partners",cat:"Response/Recovery"},
+  {code:"IS-111.a",title:"Livestock in disasters",cat:"Animals/Livestock"},
+  {code:"IS-120.c",title:"An introduction to exercises",cat:"Emergency Mgmt"},
+  {code:"IS-130.a",title:"How to be an exercise evaluator",cat:"Emergency Mgmt"},
+  {code:"IS-144.a",title:"TERT basic course",cat:"Other"},
+  {code:"IS-200.c",title:"Basic incident command system for initial response, ICS-200",cat:"ICS/NIMS"},
+  {code:"IS-201.a",title:"Forms used for the development of the incident action plan",cat:"ICS/NIMS"},
+  {code:"IS-212.b",title:"Introduction to unified hazard mitigation assistance",cat:"Hazard Mitigation"},
+  {code:"IS-230.e",title:"Fundamentals of emergency management",cat:"Emergency Mgmt"},
+  {code:"IS-235.c",title:"Emergency planning",cat:"Emergency Mgmt"},
+  {code:"IS-236",title:"Introduction to deliberate planning",cat:"Continuity"},
+  {code:"IS-238",title:"Critical concepts of supply chain flow and resilience",cat:"Response/Recovery"},
+  {code:"IS-240.c",title:"Leadership and influence",cat:"Emergency Mgmt"},
+  {code:"IS-241.c",title:"Decision making and problem solving",cat:"Emergency Mgmt"},
+  {code:"IS-242.c",title:"Effective communication",cat:"Emergency Mgmt"},
+  {code:"IS-244.b",title:"Developing and managing volunteers",cat:"Emergency Mgmt"},
+  {code:"IS-247.c",title:"Integrated public alert and warning system for alert originators",cat:"Emergency Mgmt"},
+  {code:"IS-251.b",title:"Integrated public alert and warning system for alerting administrators",cat:"Emergency Mgmt"},
+  {code:"IS-271.a",title:"Anticipating hazardous weather and community risk",cat:"Hazard Mitigation"},
+  {code:"IS-273",title:"How to read a flood insurance rate map",cat:"Hazard Mitigation"},
+  {code:"IS-274",title:"How to use a flood insurance study",cat:"Hazard Mitigation"},
+  {code:"IS-284.a",title:"Using the substantial damage estimator 3.0 tool",cat:"Hazard Mitigation"},
+  {code:"IS-285",title:"Substantial damage estimation for floodplain administrators",cat:"Hazard Mitigation"},
+  {code:"IS-288.a",title:"The role of voluntary organizations in emergency management",cat:"Emergency Mgmt"},
+  {code:"IS-289",title:"Voluntary agency liaison overview",cat:"Emergency Mgmt"},
+  {code:"IS-293",title:"Mission assignment overview",cat:"Response/Recovery"},
+  {code:"IS-315.a",title:"CERT and the incident command system",cat:"ICS/NIMS"},
+  {code:"IS-317.a",title:"Introduction to community emergency response teams",cat:"Emergency Mgmt"},
+  {code:"IS-318.b",title:"Local mitigation planning training",cat:"Hazard Mitigation"},
+  {code:"IS-324.a",title:"Community hurricane preparedness",cat:"Hazard Mitigation"},
+  {code:"IS-328.a",title:"Plan review for local mitigation plans",cat:"Hazard Mitigation"},
+  {code:"IS-360",title:"Preparing for mass casualty incidents",cat:"Security"},
+  {code:"IS-362.a",title:"Multi-hazard emergency planning for schools",cat:"Emergency Mgmt"},
+  {code:"IS-363",title:"Introduction to emergency management for higher education",cat:"Emergency Mgmt"},
+  {code:"IS-366.a",title:"Planning for the needs of children in disasters",cat:"Emergency Mgmt"},
+  {code:"IS-393.b",title:"Introduction to hazard mitigation",cat:"Hazard Mitigation"},
+  {code:"IS-403.a",title:"Introduction to individual assistance",cat:"Response/Recovery"},
+  {code:"IS-405.a",title:"Mass care/emergency assistance overview",cat:"Response/Recovery"},
+  {code:"IS-406",title:"Operating a shelter",cat:"Response/Recovery"},
+  {code:"IS-453",title:"Introduction to homeland security planning",cat:"Continuity"},
+  {code:"IS-505",title:"Concepts of religious literacy for emergency management",cat:"Emergency Mgmt"},
+  {code:"IS-545.a",title:"Reconstitution planning course",cat:"Continuity"},
+  {code:"IS-552",title:"The public works role in emergency management",cat:"Public Works"},
+  {code:"IS-553.a",title:"Coordination between water utilities and emergency management agencies",cat:"Public Works"},
+  {code:"IS-554",title:"Emergency planning for public works",cat:"Public Works"},
+  {code:"IS-556",title:"Damage assessment for public works",cat:"Public Works"},
+  {code:"IS-558",title:"Public works and disaster recovery",cat:"Public Works"},
+  {code:"IS-559",title:"Local damage assessment",cat:"Public Works"},
+  {code:"IS-650.b",title:"Building partnerships with tribal governments",cat:"Emergency Mgmt"},
+  {code:"IS-700.b",title:"An introduction to the national incident management system",cat:"ICS/NIMS"},
+  {code:"IS-703.b",title:"National incident management system resource management",cat:"ICS/NIMS"},
+  {code:"IS-706",title:"NIMS intrastate mutual aid - an introduction",cat:"ICS/NIMS"},
+  {code:"IS-800.d",title:"National response framework, an introduction",cat:"ICS/NIMS"},
+  {code:"IS-802.a",title:"Emergency support function #2 - communications",cat:"Response/Recovery"},
+  {code:"IS-815",title:"ABCs of temporary emergency power",cat:"Response/Recovery"},
+  {code:"IS-822",title:"Fundamentals of management and support coordination of federal disaster operations",cat:"Response/Recovery"},
+  {code:"IS-860.c",title:"The national infrastructure protection plan, an introduction",cat:"Security"},
+  {code:"IS-870.b",title:"Dams sector: crisis management",cat:"Other"},
+  {code:"IS-871.b",title:"Dams sector: security awareness",cat:"Security"},
+  {code:"IS-872.b",title:"Dams sector: protective measures",cat:"Security"},
+  {code:"IS-904",title:"Active shooter prevention: you can make a difference",cat:"Security"},
+  {code:"IS-905",title:"Responding to an active shooter: you can make a difference",cat:"Security"},
+  {code:"IS-906",title:"Workplace security awareness",cat:"Security"},
+  {code:"IS-907.a",title:"Active shooter: what you can do",cat:"Security"},
+  {code:"IS-908",title:"Emergency management for senior officials",cat:"Emergency Mgmt"},
+  {code:"IS-909",title:"Community preparedness: implementing simple activities for everyone",cat:"Emergency Mgmt"},
+  {code:"IS-912",title:"Retail security awareness: understanding the hidden hazards",cat:"Security"},
+  {code:"IS-913.a",title:"Critical infrastructure security and resilience",cat:"Security"},
+  {code:"IS-914",title:"Surveillance awareness: what you can do",cat:"Security"},
+  {code:"IS-915",title:"Protecting critical infrastructure against insider threats",cat:"Security"},
+  {code:"IS-916",title:"Critical infrastructure security: theft and diversion",cat:"Security"},
+  {code:"IS-917",title:"Active shooter leadership",cat:"Security"},
+  {code:"IS-922.a",title:"Applications of GIS for emergency management",cat:"Emergency Mgmt"},
+  {code:"IS-951",title:"DHS radio interoperability",cat:"Other"},
+  {code:"IS-995",title:"ICS position foundation",cat:"ICS/NIMS"},
+  {code:"IS-1000",title:"Public assistance program and eligibility",cat:"Public Assistance"},
+  {code:"IS-1002",title:"FEMA grants portal - transparency at every step",cat:"Public Assistance"},
+  {code:"IS-1004",title:"The FEMA site inspection process",cat:"Public Assistance"},
+  {code:"IS-1006",title:"Documenting disaster damage and developing project files",cat:"Public Assistance"},
+  {code:"IS-1007",title:"Detailed damage description and dimensions",cat:"Public Assistance"},
+  {code:"IS-1008",title:"Scope of work development",cat:"Public Assistance"},
+  {code:"IS-1009",title:"Conditions of the public assistance grant",cat:"Public Assistance"},
+  {code:"IS-1010",title:"Emergency protective measures",cat:"Public Assistance"},
+  {code:"IS-1011",title:"Roads and culverts",cat:"Public Assistance"},
+  {code:"IS-1013",title:"Costing - estimates and the cost estimating format",cat:"Public Assistance"},
+  {code:"IS-1014",title:"Integrating 406 mitigation considerations into your public assistance grant",cat:"Public Assistance"},
+  {code:"IS-1015",title:"Insurance considerations, compliance, and requirements",cat:"Public Assistance"},
+  {code:"IS-1017",title:"Scope change requests, time extensions, improved/alternate project requests",cat:"Public Assistance"},
+  {code:"IS-1021",title:"Bridge damage considerations",cat:"Public Assistance"},
+  {code:"IS-1023",title:"Electrical systems considerations",cat:"Public Assistance"},
+  {code:"IS-1024",title:"Water and wastewater treatment system considerations",cat:"Public Assistance"},
+  {code:"IS-1170.a",title:"Introduction to the interagency security committee",cat:"Security"},
+  {code:"IS-1171.a",title:"Introduction to the risk management process",cat:"Security"},
+  {code:"IS-1172.a",title:"Determine the facility security level and baseline level of protection",cat:"Security"},
+  {code:"IS-1173.a",title:"Identify and assess risk, develop and implement a risk management strategy",cat:"Security"},
+  {code:"IS-1174.a",title:"Facility security committees",cat:"Security"},
+  {code:"IS-1190",title:"The national oil and hazardous substances pollution contingency plan",cat:"Hazard Mitigation"},
+  {code:"IS-1200",title:"TERT team leader course",cat:"Other"},
+  {code:"IS-1300.a",title:"Introduction to continuity",cat:"Continuity"},
+  {code:"IS-2000",title:"National preparedness goal and system overview",cat:"Emergency Mgmt"},
+  {code:"IS-2002",title:"Introduction to FEMA operational planning",cat:"Continuity"},
+  {code:"IS-2200",title:"Basic emergency operations center functions",cat:"Emergency Mgmt"},
+  {code:"IS-2500",title:"National prevention framework, an introduction",cat:"Emergency Mgmt"},
+  {code:"IS-2600",title:"National protection framework, an introduction",cat:"Emergency Mgmt"},
+  {code:"IS-2700",title:"National mitigation framework, an introduction",cat:"Hazard Mitigation"},
+  {code:"IS-2900.a",title:"National disaster recovery framework overview",cat:"Response/Recovery"},
+  {code:"IS-2901",title:"Introduction to community lifelines",cat:"Response/Recovery"},
+  {code:"IS-2905",title:"Coordinating health and social services recovery",cat:"Response/Recovery"}
+];
+
+/* ─────────────────────────────────────────
+   STATE
+───────────────────────────────────────── */
+const femaSelected = new Set();
+let femaFiltered = [];
+let CUSTOM = [];
+const customSelected = new Set();
+let customFiltered = [];
+let nextId = 1;
+
+/* ─────────────────────────────────────────
+   TABS
+───────────────────────────────────────── */
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===(t==='fema'?0:1)));
+  document.getElementById('tab-fema').classList.toggle('active',t==='fema');
+  document.getElementById('tab-custom').classList.toggle('active',t==='custom');
+}
+
+/* ─────────────────────────────────────────
+   STATS + SUMMARY BAR
+───────────────────────────────────────── */
+function updateStats(){
+  const total = femaSelected.size + customSelected.size;
+  document.getElementById('fema-sel-count').textContent = femaSelected.size;
+  document.getElementById('custom-total-count').textContent = CUSTOM.length;
+  document.getElementById('custom-sel-count').textContent = customSelected.size;
+
+  const btn = document.getElementById('btn-save');
+  const summary = document.getElementById('save-summary');
+  btn.disabled = total === 0;
+
+  if(total === 0){
+    summary.innerHTML = '<strong>0</strong> items selected — make selections above, then save to the form.';
+  } else {
+    const parts = [];
+    if(femaSelected.size) parts.push(`<strong>${femaSelected.size}</strong> FEMA course${femaSelected.size!==1?'s':''}`);
+    if(customSelected.size) parts.push(`<strong>${customSelected.size}</strong> custom entr${customSelected.size!==1?'ies':'y'}`);
+    summary.innerHTML = `${parts.join(' + ')} ready to save.`;
+  }
+}
+
+/* ─────────────────────────────────────────
+   FEMA RENDER
+───────────────────────────────────────── */
+function getFemaFiltered(){
+  const q = document.getElementById('f-search').value.toLowerCase();
+  const cat = document.getElementById('f-cat').value;
+  const show = document.getElementById('f-show').value;
+  return FEMA_COURSES.filter(c=>{
+    const mQ = !q||(c.code.toLowerCase().includes(q)||c.title.toLowerCase().includes(q));
+    const mC = !cat||c.cat===cat;
+    const mS = show==='all'||(show==='selected'&&femaSelected.has(c.code))||(show==='unselected'&&!femaSelected.has(c.code));
+    return mQ&&mC&&mS;
+  });
+}
+
+function renderFema(){
+  femaFiltered = getFemaFiltered();
+  const list = document.getElementById('fema-list');
+  if(!femaFiltered.length){list.innerHTML='<div class="empty">No courses match your filters.</div>';updateStats();return;}
+  const cats = [...new Set(femaFiltered.map(c=>c.cat))].sort();
+  let html = '';
+  cats.forEach(cat=>{
+    femaFiltered.filter(c=>c.cat===cat).forEach((c,i)=>{
+      if(i===0) html+=`<div class="cat-label">${cat}</div>`;
+      const chk = femaSelected.has(c.code);
+      html+=`<div class="course-row${chk?' checked':''}" onclick="toggleFema('${c.code}')">
+        <input type="checkbox"${chk?' checked':''} onclick="event.stopPropagation();toggleFema('${c.code}')" tabindex="-1">
+        <span class="col-code">${c.code}</span>
+        <span class="col-title">${c.title}</span>
+        <span class="cat-pill">${c.cat}</span>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+  updateStats();
+}
+
+function toggleFema(code){
+  if(femaSelected.has(code)) femaSelected.delete(code); else femaSelected.add(code);
+  renderFema();
+}
+function femaSelectAll(){femaFiltered.forEach(c=>femaSelected.add(c.code));renderFema();}
+function femaClearAll(){femaFiltered.forEach(c=>femaSelected.delete(c.code));renderFema();}
+
+/* ─────────────────────────────────────────
+   CUSTOM RENDER
+───────────────────────────────────────── */
+function getCustomFiltered(){
+  const q = document.getElementById('c-search').value.toLowerCase();
+  const cat = document.getElementById('c-cat-filter').value;
+  const show = document.getElementById('c-show').value;
+  return CUSTOM.filter(c=>{
+    const key = c.id+'';
+    const mQ = !q||(c.institution.toLowerCase().includes(q)||c.name.toLowerCase().includes(q)||(c.courseId&&c.courseId.toLowerCase().includes(q)));
+    const mC = !cat||c.cat===cat;
+    const mS = show==='all'||(show==='selected'&&customSelected.has(key))||(show==='unselected'&&!customSelected.has(key));
+    return mQ&&mC&&mS;
+  });
+}
+
+function renderCustom(){
+  customFiltered = getCustomFiltered();
+  const list = document.getElementById('custom-list');
+  if(!CUSTOM.length){list.innerHTML='<div class="empty">No custom entries yet. Add one above or bulk import.</div>';updateStats();return;}
+  if(!customFiltered.length){list.innerHTML='<div class="empty">No entries match your filters.</div>';updateStats();return;}
+  const cats = [...new Set(customFiltered.map(c=>c.cat))].sort();
+  let html = '';
+  cats.forEach(cat=>{
+    customFiltered.filter(c=>c.cat===cat).forEach((c,i)=>{
+      if(i===0) html+=`<div class="cat-label">${cat}</div>`;
+      const key = c.id+'';
+      const chk = customSelected.has(key);
+      html+=`<div class="course-row${chk?' checked':''}" onclick="toggleCustom('${key}')">
+        <input type="checkbox"${chk?' checked':''} onclick="event.stopPropagation();toggleCustom('${key}')" tabindex="-1">
+        <span class="col-inst">${c.institution}</span>
+        <span class="col-id">${c.courseId||''}</span>
+        <span class="col-title">${c.name}</span>
+        <span class="cat-pill">${c.cat}</span>
+        <button class="del-btn" onclick="deleteCustom(${c.id},event)">&#128465;</button>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+  updateStats();
+}
+
+function toggleCustom(key){
+  if(customSelected.has(key)) customSelected.delete(key); else customSelected.add(key);
+  renderCustom();
+}
+function customSelectAll(){customFiltered.forEach(c=>customSelected.add(c.id+''));renderCustom();}
+function customClearAll(){customFiltered.forEach(c=>customSelected.delete(c.id+''));renderCustom();}
+
+function deleteCustom(id,e){
+  e.stopPropagation();
+  CUSTOM = CUSTOM.filter(c=>c.id!==id);
+  customSelected.delete(id+'');
+  renderCustom();
+}
+
+/* ─────────────────────────────────────────
+   ADD / BULK IMPORT
+───────────────────────────────────────── */
+function addCustom(instV,idV,nameV,catV,silent){
+  const institution = (instV||document.getElementById('c-inst').value).trim();
+  const courseId = (idV!==undefined?idV:document.getElementById('c-id').value).trim();
+  const name = (nameV||document.getElementById('c-name').value).trim();
+  const cat = catV||document.getElementById('c-cat').value;
+  const errEl = document.getElementById('c-err');
+  if(!institution){if(!silent&&errEl)errEl.textContent='Institution is required.';return false;}
+  if(!name){if(!silent&&errEl)errEl.textContent='Course name is required.';return false;}
+  if(CUSTOM.find(c=>c.institution.toLowerCase()===institution.toLowerCase()&&c.name.toLowerCase()===name.toLowerCase())){
+    if(!silent&&errEl)errEl.textContent='This entry already exists for that institution.';return false;
+  }
+  CUSTOM.push({id:nextId++,institution,courseId,name,cat});
+  if(!silent){
+    document.getElementById('c-inst').value='';
+    document.getElementById('c-id').value='';
+    document.getElementById('c-name').value='';
+    if(errEl)errEl.textContent='';
+  }
+  renderCustom();
+  return true;
+}
+
+function bulkImport(){
+  const raw = document.getElementById('c-bulk').value;
+  const errEl = document.getElementById('c-bulk-err');
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){errEl.textContent='Nothing to import.';return;}
+  let ok=0,fail=0;
+  lines.forEach(line=>{
+    const parts = line.split('|').map(p=>p.trim());
+    if(parts.length<2){fail++;return;}
+    let inst,cid,name,cat;
+    if(parts.length>=4){[inst,cid,name,cat]=parts;}
+    else if(parts.length===3){[inst,name,cat]=parts;cid='';}
+    else{[inst,name]=parts;cid='';cat='Other';}
+    if(!cat) cat='Other';
+    const res = addCustom(inst,cid,name,cat,true);
+    if(res) ok++; else fail++;
+  });
+  errEl.textContent=`Imported ${ok} entr${ok!==1?'ies':'y'}${fail?`, skipped ${fail} (duplicate or invalid)`:'.'}.`;
+  if(ok>0) document.getElementById('c-bulk').value='';
+  renderCustom();
+}
+
+/* ─────────────────────────────────────────
+   SAVE TO ZOHO CREATOR FORM
+   Replaces the old exportAll() function
+───────────────────────────────────────── */
+function buildFormattedText(){
+  const femaSel = FEMA_COURSES.filter(c=>femaSelected.has(c.code));
+  const customSel = CUSTOM.filter(c=>customSelected.has(c.id+''));
+
+  let lines = [];
+
+  if(femaSel.length){
+    lines.push('--- FEMA Independent Study Courses ---');
+    const cats = {};
+    femaSel.forEach(c=>{if(!cats[c.cat])cats[c.cat]=[];cats[c.cat].push(c);});
+    Object.keys(cats).sort().forEach(cat=>{
+      lines.push(`[${cat}]`);
+      cats[cat].forEach(c=>{
+        lines.push(`  ${c.code} - ${c.title.charAt(0).toUpperCase()+c.title.slice(1)}`);
+      });
+    });
+  }
+
+  if(customSel.length){
+    if(lines.length) lines.push('');
+    lines.push('--- Additional Trainings & Certifications ---');
+    const cats = {};
+    customSel.forEach(c=>{if(!cats[c.cat])cats[c.cat]=[];cats[c.cat].push(c);});
+    Object.keys(cats).sort().forEach(cat=>{
+      lines.push(`[${cat}]`);
+      cats[cat].forEach(c=>{
+        const idPart = c.courseId ? ` (${c.courseId})` : '';
+        lines.push(`  ${c.institution}${idPart} - ${c.name.charAt(0).toUpperCase()+c.name.slice(1)}`);
+      });
+    });
+  }
+
+  return lines.join('\n');
+}
+
+function showStatus(msg, type, duration=3500){
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  el.className = 'save-status ' + type;
+  if(duration) setTimeout(()=>{ el.className='save-status'; }, duration);
+}
+
+function saveToForm(){
+  const total = femaSelected.size + customSelected.size;
+  if(total === 0){ showStatus('Nothing selected.','info'); return; }
+
+  const femaField  = document.getElementById('cfg-fema-field').value.trim()   || 'Additional_Certifications_and_Licenses';
+  const customField= document.getElementById('cfg-custom-field').value.trim() || 'Additional_Certifications_and_Licenses';
+
+  const formattedText = buildFormattedText();
+
+  /* ── Try Zoho Creator Widget API ── */
+  if(typeof ZOHO !== 'undefined' && ZOHO.CREATOR && ZOHO.CREATOR.UTIL){
+    try{
+      // If both fields are the same, send combined text once
+      if(femaField === customField){
+        ZOHO.CREATOR.UTIL.setFieldValues({ [femaField]: formattedText });
+      } else {
+        // Send FEMA selections to femaField
+        const femaLines = FEMA_COURSES.filter(c=>femaSelected.has(c.code))
+          .map(c=>`${c.code} - ${c.title}`).join('\n');
+        // Send custom selections to customField
+        const customLines = CUSTOM.filter(c=>customSelected.has(c.id+''))
+          .map(c=>`${c.institution}${c.courseId?' ('+c.courseId+')':''} - ${c.name}`).join('\n');
+        if(femaLines)   ZOHO.CREATOR.UTIL.setFieldValues({ [femaField]: femaLines });
+        if(customLines) ZOHO.CREATOR.UTIL.setFieldValues({ [customField]: customLines });
+      }
+      showStatus(`✓ Saved ${total} item${total!==1?'s':''} to the form.`, 'success');
+    } catch(err){
+      showStatus('Save failed — check field names in config above.','error', 6000);
+      console.error('Zoho Widget API error:',err);
+    }
+
+  } else {
+    /* ── Fallback: copy to clipboard (for testing outside Zoho) ── */
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(formattedText).then(()=>{
+        showStatus('⚠️ Not inside Zoho — text copied to clipboard instead.','info',5000);
+      }).catch(()=>{
+        showStatus('Not in Zoho Creator. Paste the text below manually.','error',6000);
+        console.log('--- COPY THIS INTO YOUR FORM FIELD ---\n'+formattedText);
+      });
+    } else {
+      showStatus('Not in Zoho Creator. See browser console for output.','error',6000);
+      console.log('--- COPY THIS INTO YOUR FORM FIELD ---\n'+formattedText);
+    }
+  }
+}
+
+/* ─────────────────────────────────────────
+   KEYBOARD SHORTCUTS
+───────────────────────────────────────── */
+document.getElementById('c-inst').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('c-id').focus();});
+document.getElementById('c-id').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('c-name').focus();});
+document.getElementById('c-name').addEventListener('keydown',e=>{if(e.key==='Enter')addCustom();});
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+renderFema();
+renderCustom();
+</script>
+</body>
+</html>
